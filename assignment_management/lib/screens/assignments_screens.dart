@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart'; 
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 import '../models/assignment.dart';
 import '../utils/constants.dart';
 
@@ -12,22 +14,7 @@ class AssignmentsScreen extends StatefulWidget {
 
 class _AssignmentsScreenState extends State<AssignmentsScreen> with SingleTickerProviderStateMixin {
   
-  final List<Assignment> _assignments = [
-    Assignment(
-      id: '1',
-      title: 'Assignment 1',
-      courseName: 'Mobile Dev',
-      dueDate: DateTime.now().add(const Duration(days: 2)),
-      priority: 'High',
-    ),
-    Assignment(
-      id: '2',
-      title: 'Group Project',
-      courseName: 'Leadership',
-      dueDate: DateTime.now().add(const Duration(days: 5)),
-      priority: 'Medium',
-    ),
-  ];
+  List<Assignment> _assignments = [];
 
   late TabController _tabController;
 
@@ -35,15 +22,45 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> with SingleTicker
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this); 
+    _loadAssignments();
+  }
+
+  Future<void> _loadAssignments() async {
+    final prefs = await SharedPreferences.getInstance();
+    final assignmentsJson = prefs.getString('assignments');
+    if (assignmentsJson != null) {
+      final List<dynamic> decoded = jsonDecode(assignmentsJson);
+      setState(() {
+        _assignments = decoded.map((item) => Assignment(
+          id: item['id'],
+          title: item['title'],
+          courseName: item['courseName'],
+          dueDate: DateTime.parse(item['dueDate']),
+          priority: item['priority'] ?? 'Medium',
+          isCompleted: item['isCompleted'] ?? false,
+        )).toList();
+      });
+    }
+  }
+
+  Future<void> _saveAssignmentsToPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    final assignmentsJson = jsonEncode(_assignments.map((a) => {
+      'id': a.id,
+      'title': a.title,
+      'courseName': a.courseName,
+      'dueDate': a.dueDate.toIso8601String(),
+      'priority': a.priority,
+      'isCompleted': a.isCompleted,
+    }).toList());
+    await prefs.setString('assignments', assignmentsJson);
   }
 
   
   void _saveAssignment(String? id, String title, String course, DateTime date, String priority) {
     if (title.isEmpty) return;
-
     setState(() {
       if (id == null) {
-        
         _assignments.add(Assignment(
           id: DateTime.now().toString(),
           title: title,
@@ -52,7 +69,6 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> with SingleTicker
           priority: priority,
         ));
       } else {
-        
         final index = _assignments.indexWhere((a) => a.id == id);
         if (index >= 0) {
           _assignments[index] = Assignment(
@@ -66,6 +82,7 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> with SingleTicker
         }
       }
     });
+    _saveAssignmentsToPrefs();
   }
 
   
@@ -73,6 +90,7 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> with SingleTicker
     setState(() {
       _assignments.removeWhere((item) => item.id == id);
     });
+    _saveAssignmentsToPrefs();
   }
 
   
@@ -83,6 +101,7 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> with SingleTicker
         _assignments[index].isCompleted = !_assignments[index].isCompleted;
       }
     });
+    _saveAssignmentsToPrefs();
   }
 
   
@@ -91,6 +110,8 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> with SingleTicker
     final courseController = TextEditingController(text: existingAssignment?.courseName ?? '');
     DateTime selectedDate = existingAssignment?.dueDate ?? DateTime.now();
     String selectedPriority = existingAssignment?.priority ?? 'Medium';
+
+    String? errorText;
 
     showModalBottomSheet(
       context: ctx,
@@ -113,7 +134,6 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> with SingleTicker
                     style: TextStyle(color: AppColors.accentYellow, fontSize: 20, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 15),
-                  
                   TextField(
                     controller: titleController,
                     style: const TextStyle(color: Colors.white),
@@ -123,7 +143,6 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> with SingleTicker
                       enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white54)),
                     ),
                   ),
-                  
                   TextField(
                     controller: courseController,
                     style: const TextStyle(color: Colors.white),
@@ -134,8 +153,6 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> with SingleTicker
                     ),
                   ),
                   const SizedBox(height: 20),
-                  
-                  
                   DropdownButton<String>(
                     value: selectedPriority,
                     dropdownColor: AppColors.cardNavy,
@@ -152,8 +169,6 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> with SingleTicker
                       });
                     },
                   ),
-
-                  
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -180,6 +195,10 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> with SingleTicker
                       )
                     ],
                   ),
+                  if (errorText != null) ...[
+                    const SizedBox(height: 10),
+                    Text(errorText!, style: const TextStyle(color: Colors.redAccent)),
+                  ],
                   const SizedBox(height: 20),
                   SizedBox(
                     width: double.infinity,
@@ -187,6 +206,34 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> with SingleTicker
                       style: ElevatedButton.styleFrom(backgroundColor: AppColors.accentYellow),
                       child: Text('Save Assignment', style: TextStyle(color: AppColors.primaryNavy, fontWeight: FontWeight.bold)),
                       onPressed: () {
+                        // Input validation
+                        if (titleController.text.trim().isEmpty) {
+                          setModalState(() {
+                            errorText = 'Assignment title is required.';
+                          });
+                          return;
+                        }
+                        if (courseController.text.trim().isEmpty) {
+                          setModalState(() {
+                            errorText = 'Course name is required.';
+                          });
+                          return;
+                        }
+                        if (selectedPriority.isEmpty) {
+                          setModalState(() {
+                            errorText = 'Priority is required.';
+                          });
+                          return;
+                        }
+                        if (selectedDate.isBefore(DateTime.now())) {
+                          setModalState(() {
+                            errorText = 'Due date must be in the future.';
+                          });
+                          return;
+                        }
+                        setModalState(() {
+                          errorText = null;
+                        });
                         _saveAssignment(
                           existingAssignment?.id, 
                           titleController.text,
@@ -209,6 +256,10 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> with SingleTicker
 
   @override
   Widget build(BuildContext context) {
+    // Sort assignments by due date before displaying
+    List<Assignment> sortedAssignments = List.from(_assignments);
+    sortedAssignments.sort((a, b) => a.dueDate.compareTo(b.dueDate));
+
     return Scaffold(
       backgroundColor: AppColors.primaryNavy,
       appBar: AppBar(
@@ -229,7 +280,6 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> with SingleTicker
       ),
       body: Column(
         children: [
-          
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: SizedBox(
@@ -245,27 +295,23 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> with SingleTicker
               ),
             ),
           ),
-
-          
           Expanded(
             child: ListView.builder(
-              itemCount: _assignments.length,
+              itemCount: sortedAssignments.length,
               itemBuilder: (ctx, index) {
-                final task = _assignments[index];
+                final task = sortedAssignments[index];
                 return Card(
                   color: Colors.white, 
                   margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   child: ListTile(
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    
                     leading: Checkbox(
                       value: task.isCompleted,
                       activeColor: AppColors.primaryNavy,
                       checkColor: Colors.white,
                       onChanged: (_) => _toggleStatus(task.id),
                     ),
-                    
                     title: Text(
                       task.title,
                       style: TextStyle(
@@ -281,7 +327,6 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> with SingleTicker
                         const SizedBox(height: 4),
                         Text("Due ${DateFormat('MMM dd').format(task.dueDate)}", style: const TextStyle(color: Colors.black54)),
                         const SizedBox(height: 4),
-                        
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                           decoration: BoxDecoration(
@@ -295,7 +340,6 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> with SingleTicker
                         )
                       ],
                     ),
-                    
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -316,7 +360,6 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> with SingleTicker
           ),
         ],
       ),
-      
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: AppColors.primaryNavy,
         selectedItemColor: AppColors.accentYellow,
