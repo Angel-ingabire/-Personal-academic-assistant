@@ -1,8 +1,9 @@
 class Assignment {
-  String id;
-  String title;
-  String courseName;
-  DateTime dueDate;
+  final String id;
+  final String title;
+  final String courseName;
+  final DateTime dueDate;
+  final String priority; 
   bool isCompleted;
 
   Assignment({
@@ -10,6 +11,7 @@ class Assignment {
     required this.title,
     required this.courseName,
     required this.dueDate,
+    this.priority = 'Medium', 
     this.isCompleted = false,
   });
 }
