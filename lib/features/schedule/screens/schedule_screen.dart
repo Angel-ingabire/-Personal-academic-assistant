@@ -31,7 +31,9 @@ class ScheduleScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
+        backgroundColor: AppColors.background,
         title: const Text('Schedule'),
       ),
       floatingActionButton: FloatingActionButton(

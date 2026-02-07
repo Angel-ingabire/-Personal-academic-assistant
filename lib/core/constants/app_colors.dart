@@ -6,10 +6,10 @@ class AppColors {
   static const Color aluRed = Color(0xFFAE2828);
   static const Color charcoal = Color(0xFF1E1917);
 
-  // Background colors (dark blue theme)
-  static const Color background = Color(0xFF1E1917); // Charcoal as main background
+  // Background colors (dark navy blue theme to match screenshots)
+  static const Color background = Color(0xFF0D1B2A); // Dark navy blue – app background, app bar, bottom nav
   static const Color cardBackground = Colors.white; // White cards for content
-  static const Color darkCardBackground = Color(0xFF1E1917); // Dark cards for summary stats
+  static const Color darkCardBackground = Color(0xFF1B263B); // Dark blue – summary cards (e.g. Active Projects)
 
   // Text colors
   static const Color textPrimary = Colors.white;

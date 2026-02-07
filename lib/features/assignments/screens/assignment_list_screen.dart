@@ -38,7 +38,9 @@ class _AssignmentListScreenState extends State<AssignmentListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
+        backgroundColor: AppColors.background,
         title: const Text('Assignments'),
       ),
       body: Column(

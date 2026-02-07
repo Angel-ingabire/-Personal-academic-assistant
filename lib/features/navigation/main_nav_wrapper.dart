@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
 
+import '../announcements/screens/announcements_screen.dart';
 import '../assignments/screens/assignment_list_screen.dart';
 import '../dashboard/screens/dashboard_screen.dart';
+import '../risk_status/screens/your_risk_status_screen.dart';
 import '../schedule/screens/schedule_screen.dart';
 
 /// Main navigation wrapper with BottomNavigationBar.
 ///
-/// Provides three primary tabs:
-/// - Dashboard (Tab 1)
-/// - Assignments (Tab 2)
-/// - Schedule (Tab 3)
+/// Tabs: Dashboard, Assignments, Schedule, Announcements, Your Risk Status.
 class MainNavWrapper extends StatefulWidget {
   const MainNavWrapper({super.key});
 
@@ -24,6 +23,8 @@ class _MainNavWrapperState extends State<MainNavWrapper> {
     const DashboardScreen(),
     const AssignmentListScreen(),
     const ScheduleScreen(),
+    const AnnouncementsScreen(),
+    const YourRiskStatusScreen(),
   ];
 
   @override
@@ -37,6 +38,7 @@ class _MainNavWrapperState extends State<MainNavWrapper> {
             _currentIndex = index;
           });
         },
+        type: BottomNavigationBarType.fixed,
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.dashboard_outlined),
@@ -52,6 +54,16 @@ class _MainNavWrapperState extends State<MainNavWrapper> {
             icon: Icon(Icons.calendar_today_outlined),
             activeIcon: Icon(Icons.calendar_today),
             label: 'Schedule',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.campaign_outlined),
+            activeIcon: Icon(Icons.campaign),
+            label: 'Announcements',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.warning_amber_outlined),
+            activeIcon: Icon(Icons.warning_amber),
+            label: 'Risk Status',
           ),
         ],
       ),
