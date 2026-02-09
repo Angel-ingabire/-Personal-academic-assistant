@@ -35,7 +35,60 @@ class _AddSessionScreenState extends State<AddSessionScreen> {
       appBar: AppBar(title: const Text('New Academic Session')),
       body: Form(
         key: _formKey,
- 
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            TextFormField(
+              decoration: const InputDecoration(labelText: 'Session Title *'),
+              validator: (v) => v!.isEmpty ? 'Enter a title' : null,
+              onSaved: (v) => _title = v!,
+            ),
+            const SizedBox(height: 20),
+            // Date Picker Trigger
+            ListTile(
+              title: Text("Date: ${_selectedDate.toLocal()}".split(' ')[0]),
+              trailing: const Icon(Icons.calendar_today, color: AppColors.aluRed),
+              onTap: () async {
+                final picked = await showDatePicker(
+                  context: context,
+                  initialDate: _selectedDate,
+                  firstDate: DateTime.now(),
+                  lastDate: DateTime(2027),
+                );
+                if (picked != null) setState(() => _selectedDate = picked);
+              },
+            ),
+            // Session Type Dropdown
+            DropdownButtonFormField<SessionType>(
+              value: _type,
+              items: SessionType.values.map((type) {
+                return DropdownMenuItem(value: type, child: Text(type.name.toUpperCase()));
+              }).toList(),
+              onChanged: (v) => setState(() => _type = v!),
+              decoration: const InputDecoration(labelText: 'Session Type'),
+            ),
+            const SizedBox(height: 30),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.aluRed),
+              onPressed: () {
+                if (_formKey.currentState!.validate()) {
+                  _formKey.currentState!.save();
+                  // TODO: Pass this back to your Provider/Database
+                  final newSession = Session(
+                    id: DateTime.now().toString(),
+                    title: _title,
+                    date: _selectedDate,
+                    startTime: _combine(_selectedDate, _startTime),
+                    endTime: _combine(_selectedDate, _endTime),
+                    type: _type,
+                  );
+                  Navigator.pop(context, newSession);
+                }
+              },
+              child: const Text('Save Session', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        ),
       ),
     );
   }
