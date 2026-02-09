@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import '../models/session_model.dart';
+
+import '../../../core/constants/app_colors.dart';
+// import '../../../core/widgets/alu_card.dart';
+
 /// Screen for scheduling new academic sessions.
 ///
 /// TODO(Member B): Implement form with:
