@@ -1,6 +1,4 @@
 /// Basic Session model used in schedule and attendance screens.
-///
-/// Member B can extend this with more fields if needed.
 enum SessionType {
   classSession,
   masterySession,

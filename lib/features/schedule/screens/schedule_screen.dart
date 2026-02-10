@@ -1,31 +1,56 @@
 import 'package:flutter/material.dart';
-
 import '../../../core/constants/app_colors.dart';
 import '../../../core/widgets/alu_card.dart';
+import '../models/session_model.dart'; 
+import '../widgets/session_card.dart'; 
 import 'add_session_screen.dart';
 
-/// Tab 3: Calendar & Sessions view.
-///
-/// Structure matches UI design with:
-/// - Weekly calendar view
-/// - List of scheduled sessions
-/// - Attendance recording for each session
-///
-/// TODO(Member B): Implement schedule screen with:
-/// - Weekly schedule displaying all sessions
-/// - View scheduled sessions
-/// - Record attendance for each session (Present/Absent toggle)
-/// - Remove scheduled sessions when cancelled
-/// - Modify session details if arrangements change
-class ScheduleScreen extends StatelessWidget {
+class ScheduleScreen extends StatefulWidget {
   const ScheduleScreen({super.key});
 
-  void _openAddSession(BuildContext context) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => const AddSessionScreen(),
-      ),
+  @override
+  State<ScheduleScreen> createState() => _ScheduleScreenState();
+}
+
+class _ScheduleScreenState extends State<ScheduleScreen> {
+  // Local list to manage sessions (Member B: Replace with Provider/DB later)
+  List<Session> _sessions = [];
+
+  void _openAddSession(BuildContext context) async {
+    // Wait for the new session object from the AddSessionScreen
+    final newSession = await Navigator.of(context).push<Session>(
+      MaterialPageRoute(builder: (_) => const AddSessionScreen()),
     );
+
+    if (newSession != null) {
+      setState(() {
+        _sessions.add(newSession);
+        // Sort sessions by start time
+        _sessions.sort((a, b) => a.startTime.compareTo(b.startTime));
+      });
+    }
+  }
+
+  void _toggleAttendance(String id) {
+    setState(() {
+      final index = _sessions.indexWhere((s) => s.id == id);
+      if (index != -1) {
+        final current = _sessions[index].attendanceStatus;
+        final next = switch (current) {
+          AttendanceStatus.unknown => AttendanceStatus.present,
+          AttendanceStatus.present => AttendanceStatus.absent,
+          AttendanceStatus.absent => AttendanceStatus.unknown,
+        };
+        _sessions[index] =
+            _sessions[index].copyWith(attendanceStatus: next);
+      }
+    });
+  }
+
+  void _deleteSession(String id) {
+    setState(() {
+      _sessions.removeWhere((s) => s.id == id);
+    });
   }
 
   @override
@@ -38,52 +63,31 @@ class ScheduleScreen extends StatelessWidget {
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: AppColors.accentYellow,
-        foregroundColor: AppColors.textDark,
         onPressed: () => _openAddSession(context),
-        child: const Icon(Icons.add),
+        child: const Icon(Icons.add, color: Color.fromARGB(255, 6, 5, 5)),
       ),
-      body: SingleChildScrollView(
+      body: ListView(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // TODO: Add calendar/week view widget here
-            const Text(
-              'Weekly Schedule',
-              style: TextStyle(
-                color: AppColors.textPrimary,
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // TODO: Replace with actual sessions from data source
-            AluCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Today\'s Sessions',
-                    style: TextStyle(
-                      color: AppColors.textDark,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 16,
-                    ),
+        children: [
+          const Text(
+            'Weekly Schedule',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 16),
+          if (_sessions.isEmpty)
+            const AluCard(
+              child: Text('No sessions scheduled. Tap + to add one!'),
+            )
+          else
+            ..._sessions.map((session) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12.0),
+                  child: SessionCard(
+                    session: session,
+                    onToggleAttendance: () => _toggleAttendance(session.id),
+                    onDelete: () => _deleteSession(session.id),
                   ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'No sessions scheduled for today',
-                    style: TextStyle(
-                      color: AppColors.textDark,
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+                )),
+        ],
       ),
     );
   }
