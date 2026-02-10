@@ -1,4 +1,4 @@
-# Student Academic Platform 📚
+# Student Academic Platform 
 
 A mobile application designed for African Leadership University (ALU) students to help them manage academic responsibilities, track assignments, schedule classes, and monitor attendance throughout the semester.
 
