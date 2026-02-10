@@ -111,6 +111,8 @@ class _AddAssignmentScreenState extends State<AddAssignmentScreen> {
                 decoration: InputDecoration(
                   labelText: 'Assignment Title *',
                   labelStyle: const TextStyle(color: AppColors.textSecondary),
+                  filled: true,
+                  fillColor: AppColors.darkCardBackground,
                   enabledBorder: const UnderlineInputBorder(
                     borderSide: BorderSide(color: AppColors.borderGrey),
                   ),
@@ -137,6 +139,8 @@ class _AddAssignmentScreenState extends State<AddAssignmentScreen> {
                 decoration: InputDecoration(
                   labelText: 'Course Name *',
                   labelStyle: const TextStyle(color: AppColors.textSecondary),
+                  filled: true,
+                  fillColor: AppColors.darkCardBackground,
                   enabledBorder: const UnderlineInputBorder(
                     borderSide: BorderSide(color: AppColors.borderGrey),
                   ),
@@ -171,6 +175,8 @@ class _AddAssignmentScreenState extends State<AddAssignmentScreen> {
                 style:
                     const TextStyle(color: AppColors.textPrimary, fontSize: 16),
                 decoration: const InputDecoration(
+                  filled: true,
+                  fillColor: AppColors.darkCardBackground,
                   enabledBorder: UnderlineInputBorder(
                     borderSide: BorderSide(color: AppColors.borderGrey),
                   ),
