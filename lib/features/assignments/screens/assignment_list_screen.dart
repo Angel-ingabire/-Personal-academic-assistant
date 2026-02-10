@@ -145,7 +145,7 @@ class _AssignmentListScreenState extends State<AssignmentListScreen> {
                   ),
                 ),
 
-                // Create Group Assignment button
+                // Create Assignment button
                 Padding(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -162,7 +162,7 @@ class _AssignmentListScreenState extends State<AssignmentListScreen> {
                       ),
                       onPressed: _openAddAssignment,
                       child: const Text(
-                        'Create Group Assignment',
+                        'Create Assignment',
                         style: TextStyle(
                           fontWeight: FontWeight.w600,
                           fontSize: 16,
