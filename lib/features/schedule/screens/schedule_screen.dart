@@ -56,7 +56,11 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Schedule')),
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        backgroundColor: AppColors.background,
+        title: const Text('Schedule'),
+      ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: AppColors.accentYellow,
         onPressed: () => _openAddSession(context),
