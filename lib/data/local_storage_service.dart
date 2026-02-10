@@ -2,7 +2,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 /// Lightweight wrapper around [SharedPreferences].
 ///
-/// Member D can extend this with higher-level helpers or migrate to SQLite.
+/// Central place for accessing raw JSON blobs for different features.
+/// Higher‑level repositories should build on top of this service so that
+/// widgets do not interact with [SharedPreferences] directly.
 class LocalStorageService {
   LocalStorageService._(this._prefs);
 
@@ -13,9 +15,10 @@ class LocalStorageService {
     return LocalStorageService._(prefs);
   }
 
-  // Example keys – can be adjusted by Member D.
-  static const _assignmentsKey = 'assignments_json';
-  static const _sessionsKey = 'sessions_json';
+  // Keys shared across the app. These are aligned with the existing
+  // Assignments feature which already stores under the `assignments` key.
+  static const _assignmentsKey = 'assignments';
+  static const _sessionsKey = 'sessions';
   static const _attendanceKey = 'attendance_json';
 
   String? getAssignmentsJson() => _prefs.getString(_assignmentsKey);

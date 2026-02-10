@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/utils/attendance_logic.dart';
 import '../../../core/widgets/alu_card.dart';
+import '../../../data/assignments_repository.dart';
+import '../../../data/sessions_repository.dart';
 import '../../assignments/models/assignment_model.dart';
 import '../../schedule/models/session_model.dart';
 import '../widgets/warning_indicator.dart';
@@ -20,6 +22,7 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   String _selectedCourse = 'All Selected Courses';
   late DashboardData _data;
+  bool _isLoading = true;
 
   static const List<String> _courseOptions = [
     'All Selected Courses',
@@ -31,7 +34,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
-    _data = DashboardData.sample();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    final assignments = await AssignmentsRepository.instance.loadAssignments();
+    final sessions = await SessionsRepository.instance.loadSessions();
+
+    setState(() {
+      // If there is no real data yet, fall back to the sample so that the
+      // dashboard does not appear completely empty on first launch.
+      if (assignments.isEmpty && sessions.isEmpty) {
+        _data = DashboardData.sample();
+      } else {
+        _data = DashboardData.fromRealData(
+          assignments: assignments,
+          sessions: sessions,
+        );
+      }
+      _isLoading = false;
+    });
   }
 
   void _onCourseTap() {
@@ -85,6 +107,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(
+        backgroundColor: AppColors.background,
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     final padding = MediaQuery.paddingOf(context);
     final width = MediaQuery.sizeOf(context).width;
     final horizontalPadding = (padding.horizontal + 4).clamp(12.0, 20.0);
@@ -456,6 +485,68 @@ class DashboardData {
   final int upcomingCount;
   final List<Session> todaySessions;
   final List<Assignment> assignmentsDueInSevenDays;
+
+  /// Build dashboard data from the real assignments and sessions that are
+  /// stored in local storage.
+  ///
+  /// This keeps the same general structure as [sample] but uses the
+  /// user’s actual data where available.
+  factory DashboardData.fromRealData({
+    required List<Assignment> assignments,
+    required List<Session> sessions,
+  }) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    // Academic week (e.g. 1–14), same calculation as in [sample].
+    final startOfYear = DateTime(now.year, 1, 1);
+    final days = today.difference(startOfYear).inDays;
+    final weekOfYear = (days / 7).floor() + 1;
+    final academicWeek = weekOfYear.clamp(1, 14);
+
+    // Today’s sessions based on the `date` field.
+    final todaySessions = sessions.where((s) {
+      final d = DateTime(s.date.year, s.date.month, s.date.day);
+      return d == today;
+    }).toList()
+      ..sort((a, b) => a.startTime.compareTo(b.startTime));
+
+    // Assignments due in the next 7 days.
+    final sevenDaysFromNow = today.add(const Duration(days: 7));
+    final assignmentsDueInSevenDays = assignments
+        .where(
+          (a) =>
+              !a.isCompleted &&
+              !a.dueDate.isBefore(today) &&
+              a.dueDate.isBefore(sevenDaysFromNow),
+        )
+        .toList()
+      ..sort((a, b) => a.dueDate.compareTo(b.dueDate));
+
+    // Simple attendance metric based on how many sessions are marked present.
+    final totalSessions = sessions.length;
+    final attendedSessions = sessions
+        .where((s) => s.attendanceStatus == AttendanceStatus.present)
+        .length;
+    final attendancePercentage = AttendanceLogic.calculatePercentage(
+      attendedSessions: attendedSessions,
+      totalSessions: totalSessions,
+    );
+
+    final pendingAssignments =
+        assignments.where((a) => !a.isCompleted).length.clamp(0, 99);
+
+    return DashboardData(
+      currentDate: now,
+      academicWeek: academicWeek,
+      attendancePercentage: attendancePercentage,
+      activeProjectsCount: pendingAssignments,
+      codeSessionsCount: sessions.length,
+      upcomingCount: pendingAssignments == 0 ? 0 : pendingAssignments,
+      todaySessions: todaySessions,
+      assignmentsDueInSevenDays: assignmentsDueInSevenDays,
+    );
+  }
 
   static DashboardData sample() {
     final now = DateTime.now();

@@ -1,18 +1,71 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../core/utils/attendance_logic.dart';
+import '../../../data/assignments_repository.dart';
+import '../../../data/sessions_repository.dart';
+import '../../schedule/models/session_model.dart';
 
 /// Your Risk Status screen – attendance %, assignment status %, average score %, Get Help.
-class YourRiskStatusScreen extends StatelessWidget {
+class YourRiskStatusScreen extends StatefulWidget {
   const YourRiskStatusScreen({super.key});
 
   @override
+  State<YourRiskStatusScreen> createState() => _YourRiskStatusScreenState();
+}
+
+class _YourRiskStatusScreenState extends State<YourRiskStatusScreen> {
+  int _attendancePercent = 0;
+  int _assignmentStatusPercent = 0;
+  int _averageScorePercent = 63; // Placeholder – no grades model yet.
+  bool _isLoading = true;
+
+  static const String _userName = 'Alex';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadMetrics();
+  }
+
+  Future<void> _loadMetrics() async {
+    final assignments = await AssignmentsRepository.instance.loadAssignments();
+    final sessions = await SessionsRepository.instance.loadSessions();
+
+    // Attendance percentage based on sessions marked as present.
+    final totalSessions = sessions.length;
+    final attendedSessions = sessions
+        .where((s) => s.attendanceStatus == AttendanceStatus.present)
+        .length;
+    final attendancePercentage = AttendanceLogic.calculatePercentage(
+      attendedSessions: attendedSessions,
+      totalSessions: totalSessions,
+    );
+
+    // Assignment completion percentage based on completed vs total.
+    final totalAssignments = assignments.length;
+    final completedAssignments =
+        assignments.where((a) => a.isCompleted).length;
+    final assignmentStatusPercent = totalAssignments == 0
+        ? 0
+        : ((completedAssignments / totalAssignments) * 100).round();
+
+    setState(() {
+      _attendancePercent = attendancePercentage.round();
+      _assignmentStatusPercent = assignmentStatusPercent;
+      // _averageScorePercent left as-is for now.
+      _isLoading = false;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // In a full app these would come from a provider or repository
-    const attendancePercent = 75;
-    const assignmentStatusPercent = 60;
-    const averageScorePercent = 63;
-    const userName = 'Alex';
+    if (_isLoading) {
+      return const Scaffold(
+        backgroundColor: AppColors.background,
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -38,7 +91,7 @@ class YourRiskStatusScreen extends StatelessWidget {
           children: [
             const SizedBox(height: 16),
             Text(
-              'Hello $userName At Risk',
+              'Hello $_userName At Risk',
               style: const TextStyle(
                 color: AppColors.textPrimary,
                 fontSize: 22,
@@ -50,7 +103,7 @@ class YourRiskStatusScreen extends StatelessWidget {
               children: [
                 Expanded(
                   child: _MetricBox(
-                    value: '$attendancePercent%',
+                    value: '$_attendancePercent%',
                     label: 'Attendance',
                     color: AppColors.aluRed,
                   ),
@@ -58,7 +111,7 @@ class YourRiskStatusScreen extends StatelessWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: _MetricBox(
-                    value: '$assignmentStatusPercent%',
+                    value: '$_assignmentStatusPercent%',
                     label: 'Assignment Status',
                     color: AppColors.accentYellow,
                   ),
@@ -66,7 +119,7 @@ class YourRiskStatusScreen extends StatelessWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: _MetricBox(
-                    value: '$averageScorePercent%',
+                    value: '$_averageScorePercent%',
                     label: 'Average Score',
                     color: AppColors.aluRed,
                   ),

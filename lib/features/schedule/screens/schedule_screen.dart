@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+
 import '../../../core/constants/app_colors.dart';
 import '../../../core/widgets/alu_card.dart';
-import '../models/session_model.dart'; 
-import '../widgets/session_card.dart'; 
+import '../../../data/sessions_repository.dart';
+import '../models/session_model.dart';
+import '../widgets/session_card.dart';
 import 'add_session_screen.dart';
 
 class ScheduleScreen extends StatefulWidget {
@@ -15,6 +17,25 @@ class ScheduleScreen extends StatefulWidget {
 class _ScheduleScreenState extends State<ScheduleScreen> {
   // Local list to manage sessions (Member B: Replace with Provider/DB later)
   List<Session> _sessions = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSessions();
+  }
+
+  Future<void> _loadSessions() async {
+    final items = await SessionsRepository.instance.loadSessions();
+    setState(() {
+      _sessions = items;
+      _isLoading = false;
+    });
+  }
+
+  Future<void> _saveSessions() async {
+    await SessionsRepository.instance.saveSessions(_sessions);
+  }
 
   void _openAddSession(BuildContext context) async {
     // Wait for the new session object from the AddSessionScreen
@@ -28,6 +49,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         // Sort sessions by start time
         _sessions.sort((a, b) => a.startTime.compareTo(b.startTime));
       });
+      await _saveSessions();
     }
   }
 
@@ -45,12 +67,14 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
             _sessions[index].copyWith(attendanceStatus: next);
       }
     });
+    _saveSessions();
   }
 
   void _deleteSession(String id) {
     setState(() {
       _sessions.removeWhere((s) => s.id == id);
     });
+    _saveSessions();
   }
 
   @override
@@ -66,29 +90,34 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         onPressed: () => _openAddSession(context),
         child: const Icon(Icons.add, color: Color.fromARGB(255, 6, 5, 5)),
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          const Text(
-            'Weekly Schedule',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 16),
-          if (_sessions.isEmpty)
-            const AluCard(
-              child: Text('No sessions scheduled. Tap + to add one!'),
-            )
-          else
-            ..._sessions.map((session) => Padding(
-                  padding: const EdgeInsets.only(bottom: 12.0),
-                  child: SessionCard(
-                    session: session,
-                    onToggleAttendance: () => _toggleAttendance(session.id),
-                    onDelete: () => _deleteSession(session.id),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                const Text(
+                  'Weekly Schedule',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 16),
+                if (_sessions.isEmpty)
+                  const AluCard(
+                    child: Text('No sessions scheduled. Tap + to add one!'),
+                  )
+                else
+                  ..._sessions.map(
+                    (session) => Padding(
+                      padding: const EdgeInsets.only(bottom: 12.0),
+                      child: SessionCard(
+                        session: session,
+                        onToggleAttendance: () =>
+                            _toggleAttendance(session.id),
+                        onDelete: () => _deleteSession(session.id),
+                      ),
+                    ),
                   ),
-                )),
-        ],
-      ),
+              ],
+            ),
     );
   }
 }

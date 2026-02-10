@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/widgets/alu_card.dart';
+import '../../../data/assignments_repository.dart';
 import '../models/assignment_model.dart';
 import 'add_assignment_screen.dart';
 import '../widgets/assignment_tile.dart';
@@ -34,27 +33,15 @@ class _AssignmentListScreenState extends State<AssignmentListScreen> {
   }
 
   Future<void> _loadAssignments() async {
-    final prefs = await SharedPreferences.getInstance();
-    final assignmentsJson = prefs.getString('assignments');
-    if (assignmentsJson != null) {
-      final List<dynamic> decoded = jsonDecode(assignmentsJson);
-      setState(() {
-        _assignments =
-            decoded.map((item) => Assignment.fromJson(item)).toList();
-        _isLoading = false;
-      });
-    } else {
-      setState(() {
-        _isLoading = false;
-      });
-    }
+    final items = await AssignmentsRepository.instance.loadAssignments();
+    setState(() {
+      _assignments = items;
+      _isLoading = false;
+    });
   }
 
-  Future<void> _saveAssignmentsToPrefs() async {
-    final prefs = await SharedPreferences.getInstance();
-    final assignmentsJson =
-        jsonEncode(_assignments.map((a) => a.toJson()).toList());
-    await prefs.setString('assignments', assignmentsJson);
+  Future<void> _saveAssignments() async {
+    await AssignmentsRepository.instance.saveAssignments(_assignments);
   }
 
   void _openAddAssignment() async {
@@ -68,7 +55,7 @@ class _AssignmentListScreenState extends State<AssignmentListScreen> {
       setState(() {
         _assignments.add(result);
       });
-      await _saveAssignmentsToPrefs();
+      await _saveAssignments();
     }
   }
 
@@ -86,7 +73,7 @@ class _AssignmentListScreenState extends State<AssignmentListScreen> {
           _assignments[index] = result;
         }
       });
-      await _saveAssignmentsToPrefs();
+      await _saveAssignments();
     }
   }
 
@@ -94,7 +81,7 @@ class _AssignmentListScreenState extends State<AssignmentListScreen> {
     setState(() {
       _assignments.removeWhere((item) => item.id == id);
     });
-    _saveAssignmentsToPrefs();
+    _saveAssignments();
   }
 
   void _toggleStatus(String id, bool? value) {
@@ -104,7 +91,7 @@ class _AssignmentListScreenState extends State<AssignmentListScreen> {
         _assignments[index].isCompleted = value ?? false;
       }
     });
-    _saveAssignmentsToPrefs();
+    _saveAssignments();
   }
 
   List<Assignment> get _filteredAssignments {
