@@ -1,13 +1,12 @@
-/// Basic Assignment model used across the app.
-///
-/// Member A can extend this with additional fields as needed.
+/// Assignment model used across the app.
+/// Supports CRUD operations with local storage persistence.
 class Assignment {
   Assignment({
     required this.id,
     required this.title,
     required this.dueDate,
     required this.courseName,
-    this.priority,
+    this.priority = 'Medium',
     this.isCompleted = false,
   });
 
@@ -15,8 +14,8 @@ class Assignment {
   final String title;
   final DateTime dueDate;
   final String courseName;
-  final String? priority; // High / Medium / Low / null
-  final bool isCompleted;
+  final String priority; // High / Medium / Low
+  bool isCompleted;
 
   Assignment copyWith({
     String? id,
@@ -35,5 +34,28 @@ class Assignment {
       isCompleted: isCompleted ?? this.isCompleted,
     );
   }
-}
 
+  /// Convert Assignment to JSON for storage
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'title': title,
+      'courseName': courseName,
+      'dueDate': dueDate.toIso8601String(),
+      'priority': priority,
+      'isCompleted': isCompleted,
+    };
+  }
+
+  /// Create Assignment from JSON
+  factory Assignment.fromJson(Map<String, dynamic> json) {
+    return Assignment(
+      id: json['id'] as String,
+      title: json['title'] as String,
+      courseName: json['courseName'] as String,
+      dueDate: DateTime.parse(json['dueDate'] as String),
+      priority: json['priority'] as String? ?? 'Medium',
+      isCompleted: json['isCompleted'] as bool? ?? false,
+    );
+  }
+}
