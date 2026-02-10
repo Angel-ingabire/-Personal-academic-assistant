@@ -49,4 +49,7 @@ lib/
 ##  Demo & Documentation
 - Demo video explains all features:
 - GitHub commit history shows individual contributions:
-- Group contribution tracker included:""
+- Group contribution tracker included: https://docs.google.com/spreadsheets/d/1DPg2ks2yzkXTKEyzxdzfIUFyxxVUa6Rcwk5Kor3JdZE/edit?gid=0#gid=0
+## Debuging and testing.
+- We run our application in cursor to do techinical testing.
+- We tested each branch individually before merging.
